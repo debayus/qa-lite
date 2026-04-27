@@ -1,0 +1,27 @@
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { useState, useMemo } from "react";
+import { useProjects } from "../hooks/useProjects";
+import ProjectCard from "../components/ProjectCard";
+import CreateProjectModal from "../components/CreateProjectModal";
+import { useAuth } from "@/hooks/useAuth";
+import { STARTER_LIMITS, BTN_PRIMARY } from "@/constants";
+import { PlusIcon, FolderIcon, MagnifyingGlassIcon, } from "@/components/ui/Icons";
+import AlertBanner from "@/components/common/AlertBanner";
+import PageHeader from "@/components/common/PageHeader";
+function SkeletonCard() {
+    return (_jsxs("div", { className: "bg-white border border-gray-200 rounded-2xl overflow-hidden animate-pulse", children: [_jsx("div", { className: "h-1.5 w-full bg-gray-200" }), _jsxs("div", { className: "p-5 space-y-4", children: [_jsxs("div", { className: "flex items-start gap-3", children: [_jsx("div", { className: "w-10 h-10 bg-gray-200 rounded-xl shrink-0" }), _jsxs("div", { className: "flex-1 space-y-2", children: [_jsx("div", { className: "h-3.5 bg-gray-200 rounded w-3/4" }), _jsx("div", { className: "h-2.5 bg-gray-100 rounded w-1/3" })] })] }), _jsx("div", { className: "grid grid-cols-3 gap-2", children: [0, 1, 2].map((i) => (_jsx("div", { className: "bg-gray-100 rounded-xl h-14" }, i))) }), _jsxs("div", { className: "space-y-1.5", children: [_jsxs("div", { className: "flex justify-between", children: [_jsx("div", { className: "h-2 w-12 bg-gray-100 rounded" }), _jsx("div", { className: "h-2 w-8 bg-gray-100 rounded" })] }), _jsx("div", { className: "h-1.5 bg-gray-100 rounded-full" })] })] })] }));
+}
+export default function ProjectsPage() {
+    const { user } = useAuth();
+    const { projects, loading, createProject, renameProject } = useProjects();
+    const [showModal, setShowModal] = useState(false);
+    const [search, setSearch] = useState("");
+    const atLimit = user?.entitlement === "free" &&
+        projects.length >= STARTER_LIMITS.maxProjects;
+    const filtered = useMemo(() => search.trim()
+        ? projects.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()))
+        : projects, [projects, search]);
+    return (_jsxs("div", { className: "space-y-6 max-w-5xl mx-auto", children: [_jsx(PageHeader, { title: "Projects", subtitle: loading ? "..." : `${projects.length} active projects`, action: _jsxs("button", { onClick: () => setShowModal(true), disabled: atLimit, title: atLimit
+                        ? `Starter plan allows ${STARTER_LIMITS.maxProjects} project. Upgrade to Pro.`
+                        : undefined, className: BTN_PRIMARY, children: [_jsx(PlusIcon, { className: "w-4 h-4" }), _jsx("span", { className: "hidden sm:inline", children: "New Project" }), _jsx("span", { className: "sm:hidden", children: "New" })] }) }), atLimit && (_jsx(AlertBanner, { message: _jsxs(_Fragment, { children: ["Starter plan supports ", STARTER_LIMITS.maxProjects, " active project.", " ", _jsx("span", { className: "font-semibold", children: "Upgrade to Pro" }), " for unlimited projects."] }) })), !loading && projects.length > 0 && (_jsxs("div", { className: "relative", children: [_jsx(MagnifyingGlassIcon, { className: "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" }), _jsx("input", { type: "text", value: search, onChange: (e) => setSearch(e.target.value), placeholder: "Search projects...", className: "w-full sm:w-72 pl-9 pr-4 py-2 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-gray-400" })] })), loading ? (_jsx("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4", children: [0, 1, 2].map((i) => (_jsx(SkeletonCard, {}, i))) })) : projects.length === 0 ? (_jsxs("div", { className: "flex flex-col items-center justify-center py-24 gap-4", children: [_jsx("div", { className: "w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center", children: _jsx(FolderIcon, { className: "w-8 h-8 text-indigo-400" }) }), _jsxs("div", { className: "text-center", children: [_jsx("p", { className: "text-sm font-semibold text-gray-800", children: "No projects yet" }), _jsx("p", { className: "text-sm text-gray-400 mt-1", children: "Create your first project to start testing" })] }), _jsxs("button", { onClick: () => setShowModal(true), className: "mt-1 flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm", children: [_jsx(PlusIcon, { className: "w-4 h-4" }), "Create First Project"] })] })) : filtered.length === 0 ? (_jsxs("div", { className: "flex flex-col items-center justify-center py-20 gap-3", children: [_jsx(MagnifyingGlassIcon, { className: "w-10 h-10 text-gray-300" }), _jsxs("p", { className: "text-sm text-gray-500", children: ["No projects matching ", _jsxs("span", { className: "font-medium", children: ["\"", search, "\""] })] }), _jsx("button", { onClick: () => setSearch(""), className: "text-sm text-indigo-600 hover:underline", children: "Clear search" })] })) : (_jsx("div", { className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4", children: filtered.map((p) => (_jsx(ProjectCard, { project: p, onRename: renameProject }, p.id))) })), showModal && (_jsx(CreateProjectModal, { onClose: () => setShowModal(false), onCreate: createProject }))] }));
+}

@@ -1,0 +1,11 @@
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, signOut as firebaseSignOut, onAuthStateChanged, } from "firebase/auth";
+import { app } from "./init";
+export const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+const githubProvider = new GithubAuthProvider();
+export const signInWithEmail = (email, password) => signInWithEmailAndPassword(auth, email, password);
+export const signUpWithEmail = (email, password) => createUserWithEmailAndPassword(auth, email, password);
+export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
+export const signInWithGithub = () => signInWithPopup(auth, githubProvider);
+export const signOut = () => firebaseSignOut(auth);
+export const onAuthChange = (callback) => onAuthStateChanged(auth, callback);
