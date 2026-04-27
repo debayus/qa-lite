@@ -1,0 +1,126 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    // Check if the requesting user is a member of a project (any role)
+    function isProjectMember(projectId) {
+      return isSignedIn() &&
+        request.auth.uid in get(/databases/$(database)/documents/projects/$(projectId)).data.members;
+    }
+
+    // Check if the requesting user is an admin of a project
+    function isProjectAdmin(projectId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/projects/$(projectId)).data.members[request.auth.uid] == 'admin';
+    }
+
+    // ─── Users ────────────────────────────────────────────────────────────────
+
+    match /users/{uid} {
+      allow read: if isSignedIn() && isOwner(uid);
+      allow create: if isSignedIn() && isOwner(uid);
+      // Only allow updating safe fields; entitlement is set server-side via RevenueCat webhooks
+      allow update: if isSignedIn() && isOwner(uid) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['entitlement']);
+    }
+
+    // ─── Usage (monthly test-case counters) ───────────────────────────────────
+
+    match /usage/{uid} {
+      allow read, write: if isSignedIn() && isOwner(uid);
+    }
+
+    // ─── Projects ─────────────────────────────────────────────────────────────
+
+    match /projects/{projectId} {
+      // Any member can read — rule must match query field (memberIds) so Firestore
+      // can verify the query constraint implies the rule (prevents PERMISSION_DENIED)
+      allow read: if isSignedIn() && request.auth.uid in resource.data.memberIds;
+
+      // Only authenticated users can create; they must be listed as admin in the new doc
+      allow create: if isSignedIn() &&
+        request.resource.data.members[request.auth.uid] == 'admin' &&
+        request.resource.data.ownerId == request.auth.uid;
+
+      // Members can update stats fields; only admins can update members list or name
+      allow update: if isSignedIn() &&
+        request.auth.uid in resource.data.memberIds && (
+        // Admins can update anything
+        resource.data.members[request.auth.uid] == 'admin' ||
+        // Non-admins can only touch stats
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats'])
+      );
+
+      // Only the project owner can delete
+      allow delete: if isSignedIn() &&
+        resource.data.ownerId == request.auth.uid;
+    }
+
+    // ─── Test Scenarios ───────────────────────────────────────────────────────
+
+    match /test_scenarios/{scenarioId} {
+      allow read: if isProjectMember(resource.data.projectId);
+      allow create: if isProjectMember(request.resource.data.projectId) &&
+        request.resource.data.createdBy == request.auth.uid;
+      allow update: if isProjectMember(resource.data.projectId);
+      allow delete: if isProjectAdmin(resource.data.projectId);
+    }
+
+    // ─── Test Cases ───────────────────────────────────────────────────────────
+
+    match /test_cases/{testCaseId} {
+      allow read: if isProjectMember(resource.data.projectId);
+      allow create: if isProjectMember(request.resource.data.projectId) &&
+        request.resource.data.createdBy == request.auth.uid;
+      allow update: if isProjectMember(resource.data.projectId);
+      allow delete: if isProjectMember(resource.data.projectId);
+    }
+
+    // ─── Bugs ─────────────────────────────────────────────────────────────────
+
+    match /bugs/{bugId} {
+      allow read: if isProjectMember(resource.data.projectId);
+      allow create: if isProjectMember(request.resource.data.projectId) &&
+        request.resource.data.reportedBy == request.auth.uid;
+      allow update: if isProjectMember(resource.data.projectId);
+      allow delete: if isProjectAdmin(resource.data.projectId);
+    }
+
+    // ─── Test Runs ────────────────────────────────────────────────────────────
+
+    match /test_runs/{runId} {
+      allow read: if isProjectMember(resource.data.projectId);
+      allow create: if isProjectMember(request.resource.data.projectId) &&
+        request.resource.data.createdBy == request.auth.uid;
+      allow update: if isProjectMember(resource.data.projectId);
+      allow delete: if isProjectAdmin(resource.data.projectId);
+    }
+
+    // ─── Full Test Suite Runs (all-scenarios) ─────────────────────────────────
+
+    match /test_suite_runs/{runId} {
+      allow read: if isProjectMember(resource.data.projectId);
+      allow create: if isProjectMember(request.resource.data.projectId) &&
+        request.resource.data.createdBy == request.auth.uid;
+      allow update: if isProjectMember(resource.data.projectId);
+      allow delete: if isProjectAdmin(resource.data.projectId);
+    }
+
+    // ─── Default: deny all ────────────────────────────────────────────────────
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
