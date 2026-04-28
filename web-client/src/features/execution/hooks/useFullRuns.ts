@@ -100,7 +100,11 @@ export function useFullRuns(projectId: string | undefined) {
 
       const results: Record<string, TestRunResult> = {};
       tcs.forEach((tc) => {
-        results[tc.id] = { title: tc.title, status: "untested" };
+        results[tc.id] = {
+          title: tc.title,
+          status: "untested",
+          steps: tc.steps ?? [],
+        };
       });
 
       scenarioRuns[scenario.id] = {

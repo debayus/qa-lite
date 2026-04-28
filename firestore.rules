@@ -28,7 +28,8 @@ service cloud.firestore {
     // ─── Users ────────────────────────────────────────────────────────────────
 
     match /users/{uid} {
-      allow read: if isSignedIn() && isOwner(uid);
+      // Any signed-in user may read profiles (needed for member lookup by email)
+      allow read: if isSignedIn();
       allow create: if isSignedIn() && isOwner(uid);
       // Only allow updating safe fields; entitlement is set server-side via RevenueCat webhooks
       allow update: if isSignedIn() && isOwner(uid) &&

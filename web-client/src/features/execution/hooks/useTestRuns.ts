@@ -75,7 +75,11 @@ export function useTestRuns(
     if (!user || !projectId) return;
     const results: Record<string, TestRunResult> = {};
     testCases.forEach((tc) => {
-      results[tc.id] = { title: tc.title, status: "untested" };
+      results[tc.id] = {
+        title: tc.title,
+        status: "untested",
+        steps: tc.steps ?? [],
+      };
     });
     await addDoc(collection(db, "test_runs"), {
       projectId,

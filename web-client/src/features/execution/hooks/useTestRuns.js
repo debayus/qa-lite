@@ -40,7 +40,11 @@ export function useTestRuns(projectId, scenarioId) {
             return;
         const results = {};
         testCases.forEach((tc) => {
-            results[tc.id] = { title: tc.title, status: "untested" };
+            results[tc.id] = {
+                title: tc.title,
+                status: "untested",
+                steps: tc.steps ?? [],
+            };
         });
         await addDoc(collection(db, "test_runs"), {
             projectId,

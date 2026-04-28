@@ -37,7 +37,11 @@ export function useAuthInit() {
           await setDoc(userRef, { ...appUser, createdAt: serverTimestamp() });
         }
 
-        const entitlement = await getEntitlement();
+        const rcEntitlement = await getEntitlement();
+        const entitlement =
+          rcEntitlement === "pro" || appUser.entitlement === "pro"
+            ? "pro"
+            : "free";
         setAuth(firebaseUser, { ...appUser, entitlement });
       } catch (e) {
         console.error("Auth init error:", e);

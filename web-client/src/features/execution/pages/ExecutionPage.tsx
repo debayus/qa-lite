@@ -61,22 +61,47 @@ function TestCaseItem({
   onNoteBlur,
 }: TestCaseItemProps) {
   const [note, setNote] = useState(result.note ?? "");
+  const [showSteps, setShowSteps] = useState(false);
+  const hasSteps = (result.steps?.length ?? 0) > 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-gray-900">{result.title}</p>
-        {result.status !== "untested" && (
-          <span
-            className={cn(
-              "text-[11px] font-semibold rounded-full px-2.5 py-0.5 shrink-0 capitalize",
-              TEST_STATUS_COLOR[result.status] ?? "bg-gray-100 text-gray-600",
-            )}
-          >
-            {result.status}
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {hasSteps && (
+            <button
+              onClick={() => setShowSteps((v) => !v)}
+              className="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium px-2 py-0.5 rounded-md hover:bg-indigo-50 transition-colors"
+            >
+              {showSteps ? "Hide steps" : "View steps"}
+            </button>
+          )}
+          {result.status !== "untested" && (
+            <span
+              className={cn(
+                "text-[11px] font-semibold rounded-full px-2.5 py-0.5 capitalize",
+                TEST_STATUS_COLOR[result.status] ?? "bg-gray-100 text-gray-600",
+              )}
+            >
+              {result.status}
+            </span>
+          )}
+        </div>
       </div>
+
+      {showSteps && hasSteps && (
+        <ol className="space-y-1 pl-1">
+          {result.steps!.map((step, i) => (
+            <li key={i} className="flex gap-2 text-xs text-gray-600">
+              <span className="shrink-0 w-4 text-gray-400 font-medium text-right">
+                {i + 1}.
+              </span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+      )}
 
       <div className="grid grid-cols-4 gap-1.5">
         {STATUS_BUTTONS.map(({ label, status, color }) => (

@@ -76,6 +76,7 @@ export interface TestRunResult {
   title: string;
   status: TestCaseStatus;
   note?: string;
+  steps?: string[];
 }
 
 export interface TestRunSummary {

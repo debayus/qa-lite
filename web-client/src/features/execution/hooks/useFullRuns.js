@@ -57,7 +57,11 @@ export function useFullRuns(projectId) {
             tcs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
             const results = {};
             tcs.forEach((tc) => {
-                results[tc.id] = { title: tc.title, status: "untested" };
+                results[tc.id] = {
+                    title: tc.title,
+                    status: "untested",
+                    steps: tc.steps ?? [],
+                };
             });
             scenarioRuns[scenario.id] = {
                 scenarioTitle: scenario.title,
